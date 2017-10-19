@@ -40,7 +40,7 @@ namespace BatchUpdater.Core
         }
 
         public static QueryBuilder<TEntity, TKey> WithProperty<TEntity, TKey>(
-            this QueryBuilder<TEntity, TKey> builder, Expression<Func<TEntity, double?>> property) where TEntity : class
+            this QueryBuilder<TEntity, TKey> builder, Expression<Func<TEntity, decimal>> property) where TEntity : class
         {
             var propertyName = property.GetPropertyName();
             var propertyValue = property.GetPropertyValueFrom(builder.Entity);
@@ -72,7 +72,12 @@ namespace BatchUpdater.Core
 
         }
 
-        static string FormatParam(this double? value)
+        static string FormatParam(this decimal? value)
+        {
+            return value == null ? "NULL" : value.Value.FormatParam();
+        }
+
+        static string FormatParam(this decimal value)
         {
             return value == null ? "NULL" : value.ToString().Replace(",", ".");
         }
