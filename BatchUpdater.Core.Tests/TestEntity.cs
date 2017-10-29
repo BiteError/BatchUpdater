@@ -5,7 +5,8 @@ namespace BatchUpdater.Core.Tests
     public class TestEntity
     {
         public Guid Id { get; set; }
-        public string Value1 { get; set; } 
-        public decimal Value2 { get; set; } 
+        public DateTime CreatedOn { get; set; }
+        public string StringValue { get; set; } 
+        public decimal DecimalValue { get; set; } 
     }
 }

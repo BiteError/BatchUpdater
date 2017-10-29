@@ -9,38 +9,109 @@ namespace BatchUpdater.Core.Tests
             new TestEntity
             {
                 Id = Guid.NewGuid(),
-                Value1 = "randomValue1",
-                Value2 = 12.5M
+                StringValue = "randomValue1",
+                DecimalValue = 12.5M,
+                CreatedOn = DateTime.UtcNow.AddMinutes(-44)
             };
 
+        private QueryBuilderFactory factory 
+            => 
+            new QueryBuilderFactory()
+            .WithConfig(new QueryBuilderConfig()
+                .WithDialect(new PgDialect())
+                .RegisterType<TestEntity>("TestEntity", "dbo"));
+
         [Fact]
-        public void TestUpdateQueryWithOneProperty()
+        public void StringSettedValueMustBeQuate()
         {
             var entity = TestEntity;
 
-            var query = entity.Update(x => x.Id)
-                .WithTableName("TestEntity")
-                .WithProperty(x => x.Value1)
-                .GetQuery();
+            var query = factory.Create<TestEntity>()
+                .Set(x => x.StringValue, entity.StringValue)
+                .Where(x => x.Id == entity.Id)
+                .GetUpdateQuery();
 
             Assert.Equal(
-                $"UPDATE dbo.\"TestEntity\" SET \"Value1\" = 'randomValue1' WHERE \"Id\" = '{entity.Id}';", 
+                $"UPDATE dbo.\"TestEntity\" SET \"{nameof(entity.StringValue)}\" = '{entity.StringValue}' WHERE (\"Id\" = '{entity.Id}');", 
                 query);
         }
 
         [Fact]
-        public void TestUpdateQueryWithOneTwoProperty()
+        public void DecimalSettedValueMustNotBeQuate()
         {
             var entity = TestEntity;
 
-            var query = entity.Update(x => x.Id)
-                .WithTableName("TestEntity")
-                .WithProperty(x => x.Value1)
-                .WithProperty(x => x.Value2)
-                .GetQuery();
+            var query = factory.Create<TestEntity>()
+                .Set(x => x.DecimalValue, entity.DecimalValue)
+                .Where(x => x.Id == entity.Id)
+                .GetUpdateQuery();
 
             Assert.Equal(
-                $"UPDATE dbo.\"TestEntity\" SET \"Value1\" = 'randomValue1', \"Value2\" = 12.5 WHERE \"Id\" = '{entity.Id}';",
+                $"UPDATE dbo.\"TestEntity\" SET \"{nameof(entity.DecimalValue)}\" = {entity.DecimalValue} WHERE (\"Id\" = '{entity.Id}');",
+                query);
+        }
+
+        [Fact]
+        public void TestUpdateQueryWithTwoProperty()
+        {
+            var entity = TestEntity;
+
+            var query = factory.Create<TestEntity>()
+                .Set(x => x.StringValue, entity.StringValue)
+                .Set(x => x.DecimalValue, entity.DecimalValue)
+                .Where(x => x.Id == entity.Id)
+                .GetUpdateQuery();
+
+            Assert.Equal(
+                $"UPDATE dbo.\"TestEntity\" SET \"{nameof(entity.StringValue)}\" = '{entity.StringValue}', \"{nameof(entity.DecimalValue)}\" = {entity.DecimalValue} WHERE (\"Id\" = '{entity.Id}');",
+                query);
+        }
+
+
+        [Fact]
+        public void TestUpdateQueryWithOneStringPropertyWithReversePredicate()
+        {
+            var entity = TestEntity;
+
+            var query = factory.Create<TestEntity>()
+                .Set(x => x.StringValue, entity.StringValue)
+                .Where(x => entity.Id == x.Id)
+                .GetUpdateQuery();
+
+            Assert.Equal(
+                $"UPDATE dbo.\"TestEntity\" SET \"{nameof(entity.StringValue)}\" = '{entity.StringValue}' WHERE ('{entity.Id}' = \"Id\");",
+                query);
+        }
+
+        [Fact]
+        public void TestUpdateQueryWithPredicateGreater()
+        {
+            var entity = TestEntity;
+            var now = DateTime.UtcNow;
+
+            var query = factory.Create<TestEntity>()
+                .Set(x => x.StringValue, entity.StringValue)
+                .Where(x => x.CreatedOn > now)
+                .GetUpdateQuery();
+
+            Assert.Equal(
+                $"UPDATE dbo.\"TestEntity\" SET \"{nameof(entity.StringValue)}\" = '{entity.StringValue}' WHERE (\"CreatedOn\" > '{now:yyyy-MM-ddTHH:mm:ss.ffffffZ}');",
+                query);
+        }
+
+        [Fact]
+        public void TestUpdateQueryWithPredicateEqualAndGreater()
+        {
+            var entity = TestEntity;
+            var now = DateTime.UtcNow;
+
+            var query = factory.Create<TestEntity>()
+                .Set(x => x.StringValue, entity.StringValue)
+                .Where(x => x.Id == entity.Id && x.CreatedOn > now)
+                .GetUpdateQuery();
+
+            Assert.Equal(
+                $"UPDATE dbo.\"TestEntity\" SET \"{nameof(entity.StringValue)}\" = '{entity.StringValue}' WHERE ((\"Id\" = '{entity.Id}') AND (\"CreatedOn\" > '{now:yyyy-MM-ddTHH:mm:ss.ffffffZ}'));",
                 query);
         }
     }
