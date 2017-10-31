@@ -23,16 +23,11 @@ namespace BatchUpdater.Core
 
         public string FormatValue<TValue>(TValue value)
         {
-            return IsNullable(value) && value == null
+            return value == null
                 ? "NULL"
                 : ValueQuote(value, Format(value));
         }
 
-        static bool IsNullable<TValue>(TValue value)
-        {
-            var type = typeof(TValue);
-            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
-        }
         static string ValueQuote<TValue>(TValue value, string formattedValue)
         {
             if (value is string
@@ -67,6 +62,10 @@ namespace BatchUpdater.Core
             if (value is bool)
             {
                 return value.ToString().ToUpper();
+            }
+            if (value is Enum)
+            {
+                return ((int)(object) value).ToString();
             }
 
             return value.ToString();

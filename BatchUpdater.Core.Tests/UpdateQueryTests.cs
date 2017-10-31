@@ -11,7 +11,8 @@ namespace BatchUpdater.Core.Tests
                 Id = Guid.NewGuid(),
                 StringValue = "randomValue1",
                 DecimalValue = 12.5M,
-                CreatedOn = DateTime.UtcNow.AddMinutes(-44)
+                CreatedOn = DateTime.UtcNow.AddMinutes(-44),
+                TestEnumValue = TestEntity.TestEnum.Value2
             };
 
         private QueryBuilderFactory factory 
@@ -33,6 +34,40 @@ namespace BatchUpdater.Core.Tests
 
             Assert.Equal(
                 $"UPDATE dbo.\"TestEntity\" SET \"{nameof(entity.StringValue)}\" = '{entity.StringValue}' WHERE (\"Id\" = '{entity.Id}');", 
+                query);
+        }
+
+        [Fact]
+        public void NullStringSettedValueMustBeNull()
+        {
+            var entity = TestEntity;
+
+            entity.StringValue = null;
+
+            var query = factory.Create<TestEntity>()
+                .Set(x => x.StringValue, entity.StringValue)
+                .Where(x => x.Id == entity.Id)
+                .GetUpdateQuery();
+
+            Assert.Equal(
+                $"UPDATE dbo.\"TestEntity\" SET \"{nameof(entity.StringValue)}\" = NULL WHERE (\"Id\" = '{entity.Id}');",
+                query);
+        }
+
+        [Fact]
+        public void EnumSettedValueMustBeInteger()
+        {
+            var entity = TestEntity;
+
+            entity.StringValue = null;
+
+            var query = factory.Create<TestEntity>()
+                .Set(x => x.TestEnumValue, entity.TestEnumValue)
+                .Where(x => x.Id == entity.Id)
+                .GetUpdateQuery();
+
+            Assert.Equal(
+                $"UPDATE dbo.\"TestEntity\" SET \"{nameof(entity.TestEnumValue)}\" = {(int)entity.TestEnumValue} WHERE (\"Id\" = '{entity.Id}');",
                 query);
         }
 
